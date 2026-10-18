@@ -16,13 +16,6 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     { to: "/analise-time", label: "Análise do Time", roles: partners },
     { to: "/anual", label: "Anual", roles: partners },
   ] },
-  { id: "leads", label: "Leads", icon: Contact2, items: [
-    { to: "/leads", label: "Central de Leads", roles: operations },
-    { to: "/followups", label: "Follow-ups", roles: operations },
-    { to: "/noshows", label: "No-shows", roles: operations },
-    { to: "/recuperacao-leads", label: "Recuperação", roles: operations },
-    { to: "/pipeline", label: "Pipeline", roles: operations },
-  ] },
   { id: "registrar-dia", label: "Registrar dia", icon: CalendarCheck, items: [
     { to: "/registrar-call", label: "Registrar dia SDR", roles: ["socio", "sdr"] },
     { to: "/validar-calls", label: "Registrar dia Closer", roles: ["socio", "closer"] },
@@ -33,6 +26,13 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     { to: "/vendas", label: "Registar venda", roles: sales },
     { to: "/registro-vendas", label: "Registo de vendas", roles: all },
     { to: "/sinais", label: "Sinais", roles: sales },
+  ] },
+  { id: "leads", label: "Leads", icon: Contact2, items: [
+    { to: "/leads", label: "Central de Leads", roles: operations },
+    { to: "/followups", label: "Follow-ups", roles: operations },
+    { to: "/noshows", label: "No-shows", roles: operations },
+    { to: "/recuperacao-leads", label: "Recuperação", roles: operations },
+    { to: "/pipeline", label: "Pipeline", roles: operations },
   ] },
   { id: "pagamentos", label: "Pagamentos", icon: Wallet, noSubNav: true, managementOnly: true, items: [
     { to: "/pagamentos", label: "Pagamentos", roles: all },
