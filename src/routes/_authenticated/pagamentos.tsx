@@ -25,10 +25,10 @@ async function call<T = any>(fn: string, args?: Record<string, unknown>): Promis
 }
 
 const TABS_GER = [
-  ["resumo", "Resumo"], ["parcelas", "Parcelas"], ["comissoes", "Comissões"], ["fixos", "Fixos"],
+  ["resumo", "Resumo"], ["parcelas", "Parcelas"], ["fixos", "Fixos e comissões"],
   ["total", "Total do mês"], ["ajustes", "Ajustes"], ["historico", "Histórico"],
 ] as const;
-const TABS_MEMBRO = [["comissoes", "Comissões"], ["fixos", "Fixos"]] as const;
+const TABS_MEMBRO = [["fixos", "Fixos e comissões"]] as const;
 
 const periodo = monthRange;
 
@@ -66,7 +66,6 @@ function Page() {
       </div>
       {cur === "resumo" && <Resumo {...p} />}
       {cur === "parcelas" && <Parcelas />}
-      {cur === "comissoes" && <Comissoes {...p} ger={ger} />}
       {cur === "fixos" && <Fixos {...p} ger={ger} />}
       {cur === "total" && <Total {...p} />}
       {cur === "ajustes" && <Ajustes />}
@@ -256,40 +255,7 @@ function Campo({ l, children }: { l: string; children: ReactNode }) {
   return <label className="block text-xs font-medium space-y-1" style={{ color: "var(--text2)" }}><span>{l}</span>{children}</label>;
 }
 
-/* ---------- Comissões ---------- */
-function Comissoes({ from, to, ger }: { from: string; to: string; ger: boolean }) {
-  const [sel, setSel] = useState<{ id: string; nome: string } | null>(null);
-  const t = useQuery({ queryKey: ["pag", "total", from], queryFn: () => call<any[]>("fin_total_mes", { p_from: from, p_to: to }) });
-  const esc = useQuery({ enabled: ger, queryKey: ["pag", "escala", from], queryFn: () => call<any[]>("fin_escala_gabriel", { p_from: from, p_to: to }) });
-  if (t.isLoading) return <Msg>A carregar…</Msg>;
-  const e = esc.data?.[0];
-  return (
-    <div className="space-y-4">
-      <Tabela head={["Pessoa", "Comissões do mês", "Escala"]} min={500}>
-        {(t.data ?? []).map((r) => (
-          <tr key={r.member_id}>
-            <td className={TD + " font-semibold"} style={tdStyle}><button className="hover:underline" onClick={() => setSel({ id: r.member_id, nome: r.nome })}>{r.nome}</button></td>
-            <td className={TD} style={tdStyle}>{eur(r.comissoes)}</td>
-            <td className={TD} style={tdStyle}>{Number(r.escala) ? eur(r.escala) : "—"}</td>
-          </tr>
-        ))}
-      </Tabela>
-      {ger && e && (
-        <div className="eda-card">
-          <div className="text-[10px] uppercase font-semibold tracking-[.1em]" style={{ color: "var(--text2)" }}>Escala do Gabriel</div>
-          <div className="flex flex-wrap gap-8 mt-2 text-sm">
-            <span>Base (caixa do time no mês): <strong>{eur(e.base)}</strong></span>
-            <span>Faixa: <strong>{Number(e.pct)}%</strong></span>
-            <span>Valor: <strong>{eur(e.valor)}</strong></span>
-          </div>
-          <p className="text-[11px] mt-2" style={{ color: "var(--text3)" }}>Faixas: menos de 3.500 = 0% · 3.500 = 2% · 5.000 = 3% · 7.000 = 4% · 9.000 ou mais = 5%.</p>
-        </div>
-      )}
-      {ger && <ComissaoDesde />}
-      {sel && <DetalheComissao {...sel} from={from} to={to} onClose={() => setSel(null)} />}
-    </div>
-  );
-}
+/* ---------- Comissões (peças usadas em Fixos e comissões) ---------- */
 function ComissaoDesde() {
   const inv = useInvalidate();
   const q = useQuery({ queryKey: ["pag", "comissao-desde"], queryFn: async () => {
@@ -342,12 +308,17 @@ const REGRA_RYAN = "Caixa próprio < 5.000 EUR = R$1.500 · ≥ 5.000 = R$2.000 
 function Fixos({ from, to, ger }: { from: string; to: string; ger: boolean }) {
   const inv = useInvalidate();
   const [pagar, setPagar] = useState<any | null>(null);
+  const [sel, setSel] = useState<{ id: string; nome: string } | null>(null);
   const q = useQuery({ queryKey: ["pag", "fixos", from], queryFn: () => call<any[]>("fin_fixos_mes", { p_from: from, p_to: to }) });
-  if (q.isLoading) return <Msg>A carregar…</Msg>;
+  const t = useQuery({ queryKey: ["pag", "total", from], queryFn: () => call<any[]>("fin_total_mes", { p_from: from, p_to: to }) });
+  const esc = useQuery({ enabled: ger, queryKey: ["pag", "escala", from], queryFn: () => call<any[]>("fin_escala_gabriel", { p_from: from, p_to: to }) });
+  if (q.isLoading || t.isLoading) return <Msg>A carregar…</Msg>;
+  const tot = new Map((t.data ?? []).map((x) => [x.member_id, x]));
+  const e = esc.data?.[0];
   return (
     <div className="space-y-3">
       {ger && <p className="text-[11px]" style={{ color: "var(--text3)" }}>Duplo clique no fixo em BRL para editar. Ao pagar, digite a cotação do dia (BRL por 1 EUR).</p>}
-      <Tabela head={["Pessoa", "Fixo (BRL)", "Regra", "Pago (EUR)", "Cotação", "Data", ""]} min={900}>
+      <Tabela head={["Pessoa", "Fixo (BRL)", "Regra", "Pago (EUR)", "Cotação", "Data", "Comissões do mês", "Escala", ""]} min={1100}>
         {(q.data ?? []).map((r) => (
           <tr key={r.member_id}>
             <td className={TD + " font-semibold"} style={tdStyle}>{r.nome}</td>
@@ -364,13 +335,31 @@ function Fixos({ from, to, ger }: { from: string; to: string; ger: boolean }) {
             <td className={TD} style={tdStyle}>{r.cotacao == null ? "—" : Number(r.cotacao).toLocaleString("pt-PT")}</td>
             <td className={TD} style={tdStyle}>{r.data_pagamento ? fmtDate(r.data_pagamento) : "—"}</td>
             <td className={TD} style={tdStyle}>
+              <button className="hover:underline font-semibold" title="Ver comissão por comissão" onClick={() => setSel({ id: r.member_id, nome: r.nome })}>{eur(tot.get(r.member_id)?.comissoes ?? 0)}</button>
+            </td>
+            <td className={TD} style={tdStyle}>{Number(tot.get(r.member_id)?.escala) ? eur(tot.get(r.member_id)?.escala) : "—"}</td>
+            <td className={TD} style={tdStyle}>
               {ger && (r.valor_brl != null || r.valor_eur_fixo != null) &&
                 <button className="eda-btn text-xs" onClick={() => setPagar(r)}>{r.pago_eur == null ? "Pagar" : "Corrigir"}</button>}
             </td>
           </tr>
         ))}
       </Tabela>
+      <p className="text-[11px]" style={{ color: "var(--text3)" }}>Clique no valor das comissões para ver cada comissão (aluno, parcela, base, % e valor).</p>
+      {ger && e && (
+        <div className="eda-card">
+          <div className="text-[10px] uppercase font-semibold tracking-[.1em]" style={{ color: "var(--text2)" }}>Escala do Gabriel</div>
+          <div className="flex flex-wrap gap-8 mt-2 text-sm">
+            <span>Base (caixa do time no mês): <strong>{eur(e.base)}</strong></span>
+            <span>Faixa: <strong>{Number(e.pct)}%</strong></span>
+            <span>Valor: <strong>{eur(e.valor)}</strong></span>
+          </div>
+          <p className="text-[11px] mt-2" style={{ color: "var(--text3)" }}>Faixas: menos de 3.500 = 0% · 3.500 = 2% · 5.000 = 3% · 7.000 = 4% · 9.000 ou mais = 5%.</p>
+        </div>
+      )}
+      {ger && <ComissaoDesde />}
       {pagar && <PagarFixo r={pagar} mes={from} onClose={() => setPagar(null)} />}
+      {sel && <DetalheComissao {...sel} from={from} to={to} onClose={() => setSel(null)} />}
     </div>
   );
 }
