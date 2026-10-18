@@ -65,7 +65,7 @@ function Page() {
         ))}
       </div>
       {cur === "resumo" && <Resumo {...p} />}
-      {cur === "parcelas" && <Parcelas />}
+      {cur === "parcelas" && <Parcelas {...p} />}
       {cur === "fixos" && <Fixos {...p} ger={ger} />}
       {cur === "total" && <Total {...p} />}
       {cur === "ajustes" && <Ajustes />}
@@ -161,16 +161,19 @@ function Resumo({ from, to }: { from: string; to: string }) {
   );
 }
 
-/* ---------- Parcelas ---------- */
-function Parcelas() {
+/* ---------- Parcelas: uma linha por aluno, uma coluna por parcela ---------- */
+const COR_ESTADO: Record<string, string> = { paga: "var(--green)", pendente: "var(--accent)", atrasada: "var(--gold)", cancelada: "var(--red)" };
+function Parcelas({ from, to }: { from: string; to: string }) {
   const inv = useInvalidate();
-  const [filtro, setFiltro] = useState("todas");
-  const [pagar, setPagar] = useState<any | null>(null);
+  const [filtro, setFiltro] = useState("aberto");
+  const [soRecorrente, setSoRecorrente] = useState(true);
+  const [doMes, setDoMes] = useState(false);
+  const [sel, setSel] = useState<any | null>(null);
   const q = useQuery({
     queryKey: ["pag", "parcelas"],
     queryFn: async () => {
       const { data, error } = await (supabase.from as any)("cobrancas_estado")
-        .select("*, venda:vendas(id, nome_cliente, produto, ticket, status)").order("data", { ascending: true });
+        .select("*, venda:vendas(id, nome_cliente, produto, ticket, status, data)").order("data", { ascending: true });
       if (error) throw error;
       return (data ?? []) as any[];
     },
@@ -181,73 +184,122 @@ function Parcelas() {
     onError: (e: any) => toast.error(friendlyError(e)),
   });
   if (q.isLoading) return <Msg>A carregar…</Msg>;
-  const rows = (q.data ?? []).filter((c) => filtro === "todas" || c.estado_calc === filtro);
+  const porVenda = new Map<string, any[]>();
+  for (const c of q.data ?? []) { const a = porVenda.get(c.venda_id) ?? []; a.push(c); porVenda.set(c.venda_id, a); }
+  let grupos = [...porVenda.values()].map((l) => l.sort((x, y) => x.parcela_num - y.parcela_num));
+  if (soRecorrente) grupos = grupos.filter((l) => (l[0].total_parcelas ?? 1) > 1);
+  if (doMes) grupos = grupos.filter((l) => l.some((c) => c.data >= from && c.data <= to));
+  const aberta = (c: any) => c.estado_calc === "pendente" || c.estado_calc === "atrasada";
+  grupos = grupos.filter((l) => {
+    if (filtro === "aberto") return l.some(aberta);
+    if (filtro === "atrasada") return l.some((c) => c.estado_calc === "atrasada");
+    if (filtro === "quitada") return l.every((c) => c.estado_calc === "paga");
+    if (filtro === "cancelada") return l.some((c) => c.estado_calc === "cancelada");
+    return true;
+  });
+  grupos.sort((x, y) => String(x[0].data).localeCompare(String(y[0].data)));
+  const maxN = Math.max(3, ...grupos.map((l) => l[0].total_parcelas ?? l.length));
+  const cols = Array.from({ length: maxN }, (_, i) => i + 1);
+  const FILTROS: [string, string][] = [["aberto", "Com parcela em aberto"], ["atrasada", "Atrasadas"], ["quitada", "Quitadas"], ["cancelada", "Canceladas"], ["todas", "Todas"]];
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2 items-center justify-between">
-        <div className="flex gap-2">
-          {["todas", "paga", "pendente", "atrasada", "cancelada"].map((f) => (
-            <button key={f} onClick={() => setFiltro(f)} className="text-xs px-3 py-1.5 rounded-full capitalize"
-              style={filtro === f ? { background: "var(--surface)", color: "var(--text)", border: "1px solid var(--accent)" } : { background: "var(--surface2)", color: "var(--text2)" }}>{f}</button>
+        <div className="flex flex-wrap gap-2">
+          {FILTROS.map(([f, l]) => (
+            <button key={f} onClick={() => setFiltro(f)} className="text-xs px-3 py-1.5 rounded-full"
+              style={filtro === f ? { background: "var(--surface)", color: "var(--text)", border: "1px solid var(--accent)" } : { background: "var(--surface2)", color: "var(--text2)" }}>{l}</button>
           ))}
         </div>
+        <div className="flex gap-4 text-xs" style={{ color: "var(--text2)" }}>
+          <label className="flex items-center gap-1.5"><input type="checkbox" checked={soRecorrente} onChange={(e) => setSoRecorrente(e.target.checked)} /> Só recorrentes</label>
+          <label className="flex items-center gap-1.5"><input type="checkbox" checked={doMes} onChange={(e) => setDoMes(e.target.checked)} /> Só quem vence no mês escolhido</label>
+        </div>
       </div>
-      <p className="text-[11px]" style={{ color: "var(--text3)" }}>Duplo clique no vencimento ou no valor total da venda para editar. Uma venda com parcelas atrasadas continua ativa até a gerência a cancelar.</p>
-      <Tabela head={["Aluno", "Produto", "Parcela", "Valor", "Total da venda", "Vencimento", "Estado", "Pago em", ""]} min={1000}>
-        {rows.map((c) => (
-          <tr key={c.id}>
-            <td className={TD + " font-semibold"} style={tdStyle}>{c.venda?.nome_cliente ?? c.nome}</td>
-            <td className={TD} style={{ ...tdStyle, color: "var(--text2)" }}>{c.venda?.produto ?? "—"}</td>
-            <td className={TD} style={tdStyle}>{c.parcela_num}/{c.total_parcelas}</td>
-            <td className={TD} style={tdStyle}>{eur(c.valor)}</td>
-            <td className={TD} style={tdStyle}>
-              <Editavel can value={String(c.venda?.ticket ?? "")} display={eur(c.venda?.ticket)}
-                onSave={async (v) => { await call("fin_alterar_valor_venda", { p_venda: c.venda_id, p_novo: Number(v) }); inv(); }} />
-            </td>
-            <td className={TD} style={tdStyle}>
-              <Editavel can={c.estado_calc !== "paga"} type="date" value={c.data} display={fmtDate(c.data)}
-                onSave={async (v) => { await call("fin_alterar_vencimento", { p_cobranca: c.id, p_data: v }); inv(); }} />
-              {c.dias_atraso > 0 && <span className="text-[11px] ml-2" style={{ color: "var(--gold)" }}>{c.dias_atraso} dias</span>}
-            </td>
-            <td className={TD} style={tdStyle}><Tag k={c.estado_calc} /></td>
-            <td className={TD} style={tdStyle}>{c.pago_em ? fmtDate(c.pago_em) : "—"}</td>
-            <td className={TD} style={tdStyle}>
-              <div className="flex gap-2 justify-end">
-              {(c.estado_calc === "pendente" || c.estado_calc === "atrasada") &&
-                <button className="eda-btn text-xs" onClick={() => setPagar(c)}>Marcar paga</button>}
-              {c.venda && !["cancelado", "cancelada"].includes(c.venda.status) &&
-                <button className="eda-btn-ghost text-xs" style={{ color: "var(--red)" }} disabled={cancelar.isPending}
-                  onClick={() => { if (confirm(`Cancelar a venda de ${c.venda.nome_cliente}? As parcelas pendentes ficam canceladas; as pagas não mudam.`)) cancelar.mutate(c.venda_id); }}>Cancelar venda</button>}
-              </div>
-            </td>
-          </tr>
-        ))}
-        {rows.length === 0 && <tr><td colSpan={9} className="px-4 py-6 text-center" style={{ color: "var(--text3)" }}>Sem parcelas.</td></tr>}
+      <p className="text-[11px]" style={{ color: "var(--text3)" }}>Uma linha por aluno. Clique na parcela para marcar como paga: a comissão dessa parcela é gerada para o SDR e o closer da venda. Os vencimentos seguem a data de início, mês a mês.</p>
+      <Tabela head={["Aluno", "Produto", "Início", "Parcelas", "Valor parcela", "Total da venda", ...cols.map((n) => `Parcela ${n}`), ""]} min={900 + maxN * 110}>
+        {grupos.map((l) => {
+          const v = l[0].venda; const n = l[0].total_parcelas ?? l.length;
+          const pagas = l.filter((c) => c.estado_calc === "paga").length;
+          const canc = v && ["cancelado", "cancelada"].includes(v.status);
+          return (
+            <tr key={l[0].venda_id}>
+              <td className={TD + " font-semibold"} style={tdStyle}>{v?.nome_cliente ?? l[0].nome}{canc && <span className="ml-2"><Tag k="cancelada" /></span>}</td>
+              <td className={TD} style={{ ...tdStyle, color: "var(--text2)" }}>{v?.produto ?? "—"}</td>
+              <td className={TD} style={tdStyle}>{fmtDate(l[0].data)}</td>
+              <td className={TD} style={tdStyle}>{pagas}/{n} pagas</td>
+              <td className={TD} style={tdStyle}>{eur(l[0].valor)}</td>
+              <td className={TD} style={tdStyle}>
+                <Editavel can value={String(v?.ticket ?? "")} display={eur(v?.ticket)}
+                  onSave={async (x) => { await call("fin_alterar_valor_venda", { p_venda: l[0].venda_id, p_novo: Number(x) }); inv(); }} />
+              </td>
+              {cols.map((num) => {
+                const c = l.find((x) => x.parcela_num === num);
+                if (!c) return <td key={num} className={TD} style={{ ...tdStyle, color: "var(--text3)" }}>—</td>;
+                const cor = COR_ESTADO[c.estado_calc] ?? "var(--text3)";
+                return (
+                  <td key={num} className={TD} style={tdStyle}>
+                    <button className="rounded-lg px-2.5 py-1 text-left text-[11px] font-semibold leading-tight" onClick={() => setSel(c)}
+                      title={c.estado_calc === "paga" ? "Paga" : "Clique para marcar como paga ou mudar o vencimento"}
+                      style={{ color: cor, background: `color-mix(in srgb, ${cor} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${cor} 35%, transparent)` }}>
+                      <span className="capitalize">{c.estado_calc}</span><br />
+                      <span style={{ fontWeight: 500 }}>{c.estado_calc === "paga" && c.pago_em ? fmtDate(c.pago_em) : fmtDate(c.data)}</span>
+                      {c.dias_atraso > 0 && <span> · {c.dias_atraso}d</span>}
+                    </button>
+                  </td>
+                );
+              })}
+              <td className={TD} style={tdStyle}>
+                {v && !canc && <button className="eda-btn-ghost text-xs" style={{ color: "var(--red)" }} disabled={cancelar.isPending}
+                  onClick={() => { if (confirm(`Cancelar a venda de ${v.nome_cliente}? As parcelas pendentes ficam canceladas; as pagas não mudam.`)) cancelar.mutate(l[0].venda_id); }}>Cancelar venda</button>}
+              </td>
+            </tr>
+          );
+        })}
+        {grupos.length === 0 && <tr><td colSpan={7 + maxN} className="px-4 py-6 text-center" style={{ color: "var(--text3)" }}>Nenhum aluno com este filtro.</td></tr>}
       </Tabela>
-      {pagar && <PagarModal c={pagar} onClose={() => setPagar(null)} />}
+      {sel && <PagarModal c={sel} onClose={() => setSel(null)} />}
     </div>
   );
 }
 
 function PagarModal({ c, onClose }: { c: any; onClose: () => void }) {
   const inv = useInvalidate();
+  const paga = c.estado_calc === "paga" || c.estado_calc === "cancelada";
   const [f, setF] = useState({ valor: String(c.valor), data: todayISO(), metodo: "Pagamento Recorrente", conta: "", obs: "" });
+  const [venc, setVenc] = useState<string>(c.data);
   const m = useMutation({
     mutationFn: () => call("fin_registar_pagamento", { p_cobranca: c.id, p_valor: Number(f.valor), p_data: f.data, p_metodo: f.metodo, p_conta: f.conta || null, p_obs: f.obs || null }),
-    onSuccess: () => { toast.success("Pagamento registado"); inv(); onClose(); },
+    onSuccess: () => { toast.success("Pagamento registado. Comissão gerada."); inv(); onClose(); },
     onError: (e: any) => toast.error(friendlyError(e)),
   });
+  const mv = useMutation({
+    mutationFn: () => call("fin_alterar_vencimento", { p_cobranca: c.id, p_data: venc }),
+    onSuccess: () => { toast.success("Vencimento atualizado"); inv(); onClose(); },
+    onError: (e: any) => toast.error(friendlyError(e)),
+  });
+  const nome = c.venda?.nome_cliente ?? c.nome;
+  if (paga) return (
+    <Modal title={`${nome} · parcela ${c.parcela_num}/${c.total_parcelas}`} onClose={onClose}>
+      <p className="text-sm" style={{ color: "var(--text2)" }}>
+        {c.estado_calc === "paga" ? `Paga ${c.pago_em ? "em " + fmtDate(c.pago_em) : ""} · ${eur(c.valor_recebido ?? c.valor)}.` : "Parcela cancelada."}
+      </p>
+    </Modal>
+  );
   return (
-    <Modal title={`Registar pagamento · ${c.venda?.nome_cliente ?? c.nome} ${c.parcela_num}/${c.total_parcelas}`} onClose={onClose}>
+    <Modal title={`Registar pagamento · ${nome} ${c.parcela_num}/${c.total_parcelas}`} onClose={onClose}>
       <div className="grid grid-cols-2 gap-3">
         <Campo l="Valor (EUR)"><input type="number" step="0.01" className="eda-input" value={f.valor} onChange={(e) => setF({ ...f, valor: e.target.value })} /></Campo>
-        <Campo l="Data"><input type="date" className="eda-input" value={f.data} onChange={(e) => setF({ ...f, data: e.target.value })} /></Campo>
+        <Campo l="Data do pagamento"><input type="date" className="eda-input" value={f.data} onChange={(e) => setF({ ...f, data: e.target.value })} /></Campo>
         <Campo l="Método"><select className="eda-input" value={f.metodo} onChange={(e) => setF({ ...f, metodo: e.target.value })}>
           {["Pagamento Recorrente", "Cartão - à vista", "MB Way", "Dinheiro", "Transferência", "Klarna"].map((o) => <option key={o}>{o}</option>)}</select></Campo>
         <Campo l="Conta"><input className="eda-input" value={f.conta} onChange={(e) => setF({ ...f, conta: e.target.value })} placeholder="Ex.: MB Way — Pablo" /></Campo>
         <div className="col-span-2"><Campo l="Observação"><input className="eda-input" value={f.obs} onChange={(e) => setF({ ...f, obs: e.target.value })} /></Campo></div>
       </div>
       <div className="flex justify-end mt-4"><button className="eda-btn" disabled={m.isPending} onClick={() => m.mutate()}>Confirmar pagamento</button></div>
+      <div className="mt-6 pt-4 border-t flex flex-wrap items-end gap-3" style={{ borderColor: "var(--border)" }}>
+        <Campo l="Mudar o vencimento desta parcela"><input type="date" className="eda-input" value={venc} onChange={(e) => setVenc(e.target.value)} /></Campo>
+        <button className="eda-btn-ghost text-xs" disabled={mv.isPending || !venc || venc === c.data} onClick={() => mv.mutate()}>Guardar vencimento</button>
+      </div>
     </Modal>
   );
 }
