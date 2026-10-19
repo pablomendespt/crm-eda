@@ -190,11 +190,15 @@ function Parcelas({ from, to }: { from: string; to: string }) {
   if (soRecorrente) grupos = grupos.filter((l) => (l[0].total_parcelas ?? 1) > 1);
   if (doMes) grupos = grupos.filter((l) => l.some((c) => c.data >= from && c.data <= to));
   const aberta = (c: any) => c.estado_calc === "pendente" || c.estado_calc === "atrasada";
+  const vendaCancelada = (l: any[]) => ["cancelado", "cancelada"].includes(l[0].venda?.status);
   grupos = grupos.filter((l) => {
+    const canc = vendaCancelada(l);
+    if (filtro === "cancelada") return canc || l.some((c) => c.estado_calc === "cancelada");
+    if (filtro === "todas") return true;
+    if (canc) return false;
     if (filtro === "aberto") return l.some(aberta);
     if (filtro === "atrasada") return l.some((c) => c.estado_calc === "atrasada");
     if (filtro === "quitada") return l.every((c) => c.estado_calc === "paga");
-    if (filtro === "cancelada") return l.some((c) => c.estado_calc === "cancelada");
     return true;
   });
   grupos.sort((x, y) => String(x[0].data).localeCompare(String(y[0].data)));
