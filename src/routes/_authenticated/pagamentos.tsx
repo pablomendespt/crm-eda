@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/pagamentos")({
 // Todos os números vêm de funções do servidor (fin_*). Nada é somado aqui.
 const TABS_GER = [
   ["resumo", "Resumo"], ["fixos", "Fixos e comissões"],
-  ["total", "Total do mês"], ["historico", "Histórico"],
+  ["historico", "Histórico"],
 ] as const;
 const TABS_MEMBRO = [["fixos", "Fixos e comissões"]] as const;
 
@@ -40,7 +40,7 @@ function Page() {
         <div>
           <h1 className="text-2xl font-bold">Pagamentos</h1>
           <p className="text-sm mt-1.5" style={{ color: "var(--text2)" }}>
-            {ger ? "Fixos, comissões e o total a pagar a cada pessoa." : "As suas comissões e o seu fixo do mês."}
+            {ger ? "Fixo, comissões, bónus e o total a pagar a cada pessoa." : "As suas comissões e o seu fixo do mês."}
           </p>
         </div>
         <label className="text-xs" style={{ color: "var(--text2)" }}>
@@ -59,7 +59,6 @@ function Page() {
       </div>
       {cur === "resumo" && <Resumo {...p} />}
       {cur === "fixos" && <Fixos {...p} ger={ger} />}
-      {cur === "total" && <Total {...p} />}
       {cur === "historico" && <Historico />}
     </div>
   );
@@ -147,44 +146,59 @@ const REGRA_RYAN = "Caixa próprio < 5.000 EUR = R$1.500 · ≥ 5.000 = R$2.000 
 function Fixos({ from, to, ger }: { from: string; to: string; ger: boolean }) {
   const inv = useInvalidate();
   const [pagar, setPagar] = useState<any | null>(null);
+  const [bonus, setBonus] = useState<any | null>(null);
   const [sel, setSel] = useState<{ id: string; nome: string } | null>(null);
   const q = useQuery({ queryKey: ["pag", "fixos", from], queryFn: () => call<any[]>("fin_fixos_mes", { p_from: from, p_to: to }) });
   const t = useQuery({ queryKey: ["pag", "total", from], queryFn: () => call<any[]>("fin_total_mes", { p_from: from, p_to: to }) });
   const esc = useQuery({ enabled: ger, queryKey: ["pag", "escala", from], queryFn: () => call<any[]>("fin_escala_gabriel", { p_from: from, p_to: to }) });
   if (q.isLoading || t.isLoading) return <Msg>A carregar…</Msg>;
+  const fx = new Map((q.data ?? []).map((x) => [x.member_id, x]));
   const tot = new Map((t.data ?? []).map((x) => [x.member_id, x]));
+  const ids = [...new Set([...(t.data ?? []).map((x) => x.member_id), ...(q.data ?? []).map((x) => x.member_id)])];
+  const linhas = ids.map((id) => ({ id, f: fx.get(id), t: tot.get(id), nome: tot.get(id)?.nome ?? fx.get(id)?.nome }))
+    .sort((a, b) => String(a.nome).localeCompare(String(b.nome)));
+  const temAjustes = linhas.some((l) => Number(l.t?.ajustes) !== 0 && l.t?.ajustes != null);
   const e = esc.data?.[0];
+  const head = ["Pessoa", "Fixo", "Fixo pago", "Comissões", "Escala", "Bónus", ...(temAjustes ? ["Ajustes"] : []), "Total a pagar", ""];
   return (
     <div className="space-y-3">
-      {ger && <p className="text-[11px]" style={{ color: "var(--text3)" }}>Duplo clique no fixo em BRL para editar. Ao pagar, digite a cotação do dia (BRL por 1 EUR).</p>}
-      <Tabela head={["Pessoa", "Fixo (BRL)", "Regra", "Pago (EUR)", "Cotação", "Data", "Comissões do mês", "Escala", ""]} min={1100}>
-        {(q.data ?? []).map((r) => (
-          <tr key={r.member_id}>
-            <td className={TD + " font-semibold"} style={tdStyle}>{r.nome}</td>
-            <td className={TD} style={tdStyle}>
-              {r.valor_eur_fixo != null ? <span>{eur(r.valor_eur_fixo)} <span className="text-[11px]" style={{ color: "var(--text3)" }}>(em EUR)</span></span> :
-                <Editavel can={ger && r.regra !== "ryan"} value={r.valor_brl == null ? "" : String(r.valor_brl)}
-                  display={r.valor_brl == null ? "por definir" : `R$ ${Number(r.valor_brl).toLocaleString("pt-PT")}`}
-                  onSave={async (v) => { await call("fin_set_fixo", { p_member: r.member_id, p_valor_brl: v === "" ? null : Number(v), p_regra: r.regra }); inv(); }} />}
+      {ger && <p className="text-[11px]" style={{ color: "var(--text3)" }}>Duplo clique no fixo em BRL para editar. Ao pagar o fixo, digite a cotação do dia (BRL por 1 EUR). Clique nas comissões para ver cada uma. O fixo em BRL só entra no total depois de pago.</p>}
+      <Tabela head={head} min={1000}>
+        {linhas.map(({ id, f, t: r, nome }) => (
+          <tr key={id}>
+            <td className={TD + " font-semibold"} style={tdStyle}>{nome}</td>
+            <td className={TD} style={{ ...tdStyle, whiteSpace: "normal" }}>
+              {!f ? <span style={{ color: "var(--text3)" }}>—</span> : f.valor_eur_fixo != null ? <span>{eur(f.valor_eur_fixo)} <span className="text-[11px]" style={{ color: "var(--text3)" }}>(em EUR)</span></span> :
+                <Editavel can={ger && f.regra !== "ryan"} value={f.valor_brl == null ? "" : String(f.valor_brl)}
+                  display={f.valor_brl == null ? "por definir" : `R$ ${Number(f.valor_brl).toLocaleString("pt-PT")}`}
+                  onSave={async (v) => { await call("fin_set_fixo", { p_member: id, p_valor_brl: v === "" ? null : Number(v), p_regra: f.regra }); inv(); }} />}
+              {f?.regra === "ryan" && <div className="text-[11px] mt-1" style={{ color: "var(--text3)" }}>Caixa próprio do mês: <strong>{eur(f.caixa_proprio)}</strong><br />{REGRA_RYAN}</div>}
             </td>
-            <td className={TD} style={{ ...tdStyle, color: "var(--text2)", whiteSpace: "normal" }}>
-              {r.regra === "ryan" ? <span className="text-xs">Caixa próprio do mês: <strong>{eur(r.caixa_proprio)}</strong><br />{REGRA_RYAN}</span> : "Fixo mensal"}
-            </td>
-            <td className={TD} style={tdStyle}>{r.pago_eur == null ? "—" : eur(r.pago_eur)}</td>
-            <td className={TD} style={tdStyle}>{r.cotacao == null ? "—" : Number(r.cotacao).toLocaleString("pt-PT")}</td>
-            <td className={TD} style={tdStyle}>{r.data_pagamento ? fmtDate(r.data_pagamento) : "—"}</td>
             <td className={TD} style={tdStyle}>
-              <button className="hover:underline font-semibold" title="Ver comissão por comissão" onClick={() => setSel({ id: r.member_id, nome: r.nome })}>{eur(tot.get(r.member_id)?.comissoes ?? 0)}</button>
+              {!f ? "—" : f.pago_eur == null ? <span style={{ color: "var(--text3)" }}>por pagar</span> : (
+                <span>{eur(f.pago_eur)}
+                  <div className="text-[11px]" style={{ color: "var(--text3)" }}>{f.cotacao != null ? `cotação ${Number(f.cotacao).toLocaleString("pt-PT")} · ` : ""}{f.data_pagamento ? fmtDate(f.data_pagamento) : ""}</div>
+                </span>)}
             </td>
-            <td className={TD} style={tdStyle}>{Number(tot.get(r.member_id)?.escala) ? eur(tot.get(r.member_id)?.escala) : "—"}</td>
             <td className={TD} style={tdStyle}>
-              {ger && (r.valor_brl != null || r.valor_eur_fixo != null) &&
-                <button className="eda-btn text-xs" onClick={() => setPagar(r)}>{r.pago_eur == null ? "Pagar" : "Corrigir"}</button>}
+              <button className="hover:underline font-semibold" title="Ver comissão por comissão" onClick={() => setSel({ id, nome })}>{eur(r?.comissoes ?? 0)}</button>
+            </td>
+            <td className={TD} style={tdStyle}>{Number(r?.escala) ? eur(r?.escala) : "—"}</td>
+            <td className={TD} style={tdStyle}>{eur(r?.bonus ?? 0)}</td>
+            {temAjustes && <td className={TD} style={{ ...tdStyle, color: Number(r?.ajustes) < 0 ? "var(--red)" : undefined }}>{eur(r?.ajustes ?? 0)}</td>}
+            <td className={TD + " font-bold"} style={{ ...tdStyle, color: "var(--green)" }}>{eur(r?.total ?? 0)}</td>
+            <td className={TD} style={tdStyle}>
+              {ger && (
+                <div className="flex gap-2 justify-end">
+                  {f && (f.valor_brl != null || f.valor_eur_fixo != null) &&
+                    <button className="eda-btn text-xs" onClick={() => setPagar(f)}>{f.pago_eur == null ? "Pagar fixo" : "Corrigir fixo"}</button>}
+                  <button className="eda-btn-ghost text-xs" onClick={() => setBonus({ member_id: id, nome })}>+ Bónus</button>
+                </div>
+              )}
             </td>
           </tr>
         ))}
       </Tabela>
-      <p className="text-[11px]" style={{ color: "var(--text3)" }}>Clique no valor das comissões para ver cada comissão (aluno, parcela, base, % e valor).</p>
       {ger && e && (
         <div className="eda-card">
           <div className="text-[10px] uppercase font-semibold tracking-[.1em]" style={{ color: "var(--text2)" }}>Escala do Gabriel</div>
@@ -198,6 +212,7 @@ function Fixos({ from, to, ger }: { from: string; to: string; ger: boolean }) {
       )}
       {ger && <ComissaoDesde />}
       {pagar && <PagarFixo r={pagar} mes={from} onClose={() => setPagar(null)} />}
+      {bonus && <BonusModal r={bonus} mes={from} onClose={() => setBonus(null)} />}
       {sel && <DetalheComissao {...sel} from={from} to={to} onClose={() => setSel(null)} />}
     </div>
   );
@@ -228,32 +243,6 @@ function PagarFixo({ r, mes, onClose }: { r: any; mes: string; onClose: () => vo
   );
 }
 
-/* ---------- Total do mês ---------- */
-function Total({ from, to }: { from: string; to: string }) {
-  const [bonus, setBonus] = useState<any | null>(null);
-  const q = useQuery({ queryKey: ["pag", "total", from], queryFn: () => call<any[]>("fin_total_mes", { p_from: from, p_to: to }) });
-  if (q.isLoading) return <Msg>A carregar…</Msg>;
-  return (
-    <>
-      <Tabela head={["Pessoa", "Fixo (EUR)", "Comissões", "Escala", "Bónus", "Ajustes", "Total a pagar", ""]} min={900}>
-        {(q.data ?? []).map((r) => (
-          <tr key={r.member_id}>
-            <td className={TD + " font-semibold"} style={tdStyle}>{r.nome}</td>
-            <td className={TD} style={tdStyle}>{r.fixo_eur == null ? <span style={{ color: "var(--text3)" }}>por pagar</span> : eur(r.fixo_eur)}{r.fixo_eur != null && !r.fixo_pago && <span className="text-[11px] ml-1" style={{ color: "var(--text3)" }}>(previsto)</span>}</td>
-            <td className={TD} style={tdStyle}>{eur(r.comissoes)}</td>
-            <td className={TD} style={tdStyle}>{eur(r.escala)}</td>
-            <td className={TD} style={tdStyle}>{eur(r.bonus)}</td>
-            <td className={TD} style={{ ...tdStyle, color: Number(r.ajustes) < 0 ? "var(--red)" : undefined }}>{eur(r.ajustes)}</td>
-            <td className={TD + " font-bold"} style={{ ...tdStyle, color: "var(--green)" }}>{eur(r.total)}</td>
-            <td className={TD} style={tdStyle}><button className="eda-btn-ghost text-xs" onClick={() => setBonus(r)}>+ Bónus</button></td>
-          </tr>
-        ))}
-      </Tabela>
-      <p className="text-[11px]" style={{ color: "var(--text3)" }}>O fixo em BRL só entra no total depois de pago com a cotação do dia.</p>
-      {bonus && <BonusModal r={bonus} mes={from} onClose={() => setBonus(null)} />}
-    </>
-  );
-}
 function BonusModal({ r, mes, onClose }: { r: any; mes: string; onClose: () => void }) {
   const inv = useInvalidate();
   const [v, setV] = useState(""); const [motivo, setMotivo] = useState("");
