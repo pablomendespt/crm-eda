@@ -27,6 +27,9 @@ begin
   if p_n = ncur then return; end if;
   resto := v.ticket - pago_tot;
   if resto < 0 then raise exception 'O já recebido é maior que o valor da venda'; end if;
+  if p_n = np and resto > 0.01 then
+    raise exception 'Ficariam só as parcelas já pagas e ainda faltam % por receber. Use pelo menos % parcelas ou ajuste o valor total da venda', round(resto,2), np + 1;
+  end if;
 
   if p_n < ncur then
     delete from public.cobrancas where id in (
