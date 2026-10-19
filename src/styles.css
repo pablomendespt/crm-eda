@@ -109,6 +109,26 @@ html.light .eda-kpi {
   background: #ffffff;
 }
 
+/* Cartão da meta coletiva (Equipa > Metas): degradê que segue o tema e mantém o texto legível */
+.eda-meta-hero {
+  background: linear-gradient(135deg, #14214a 0%, #0d1735 100%);
+  border: 1px solid rgba(96, 140, 255, 0.28);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  --mh-title: #9fb4e6;
+  --mh-text: #eef2ff;
+  --mh-sub: #aebbdc;
+  --mh-track: rgba(148, 170, 220, 0.2);
+}
+html.light .eda-meta-hero {
+  background: linear-gradient(135deg, #ffffff 0%, #e8f0fe 100%);
+  border: 1px solid rgba(37, 99, 235, 0.22);
+  box-shadow: 0 1px 2px rgba(12, 26, 46, 0.06), 0 10px 24px rgba(37, 99, 235, 0.08);
+  --mh-title: #3b4f75;
+  --mh-text: #0c1a2e;
+  --mh-sub: #44566f;
+  --mh-track: rgba(37, 99, 235, 0.14);
+}
+
 html.light .eda-card,
 html.light .eda-kpi {
   box-shadow: 0 1px 2px rgba(12, 26, 46, 0.06), 0 8px 20px rgba(12, 26, 46, 0.05);

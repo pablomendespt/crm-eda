@@ -67,10 +67,10 @@ function barColor(pct: number) {
   return "var(--gold)";
 }
 
-function Bar({ pct }: { pct: number }) {
+function Bar({ pct, track }: { pct: number; track?: string }) {
   const p = Math.max(0, Math.min(100, pct));
   return (
-    <div className="h-2 w-full rounded-full overflow-hidden" style={{ background: "var(--surface2)" }}>
+    <div className="h-2.5 w-full rounded-full overflow-hidden" style={{ background: track ?? "var(--surface2)" }}>
       <div
         className="h-full rounded-full transition-all duration-500"
         style={{ width: `${p}%`, background: barColor(pct) }}
@@ -254,31 +254,44 @@ function MetasPage() {
       </header>
 
       {/* Meta coletiva */}
-      <section
-        className="rounded-2xl p-6"
-        style={{
-          background: "linear-gradient(180deg, var(--surface3) 0%, rgba(13,26,46,0.5) 100%)",
-          border: "1px solid var(--border)",
-        }}
-      >
-        <div className="flex items-center gap-2 mb-3">
-          <Trophy size={16} style={{ color: "var(--gold)" }} />
-          <h2 className="text-[11px] uppercase tracking-wide font-semibold" style={{ color: "var(--text3)" }}>
+      <section className="eda-meta-hero rounded-2xl p-6 sm:p-7" style={{ color: "var(--mh-text)" }}>
+        <div className="flex items-center gap-2 mb-4">
+          <Trophy size={18} style={{ color: "var(--gold)" }} />
+          <h2 className="text-xs uppercase tracking-wider font-semibold" style={{ color: "var(--mh-title)" }}>
             Meta do mês da equipa
           </h2>
         </div>
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="text-3xl font-bold">{eur(fatMes.bruto)}</div>
-          <div className="text-sm" style={{ color: "var(--text2)" }}>
-            de {eur(alvoColetivo)} · {Math.round(pctColetivo)}%
+
+        <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+          <div>
+            <div className="text-xs font-medium mb-1" style={{ color: "var(--mh-sub)" }}>Faturação bruta</div>
+            <div className="text-4xl font-bold tracking-tight">{eur(fatMes.bruto)}</div>
+          </div>
+          <div className="text-sm font-medium pb-1" style={{ color: "var(--mh-sub)" }}>
+            meta {eur(alvoColetivo)} · <span style={{ color: "var(--mh-text)", fontWeight: 700 }}>{Math.round(pctColetivo)}%</span>
           </div>
         </div>
         <div className="mt-3">
-          <Bar pct={pctColetivo} />
+          <Bar pct={pctColetivo} track="var(--mh-track)" />
         </div>
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm"><span>Caixa: {eur(fatMes.liquido)}</span><span style={{ color: "var(--text2)" }}>de {eur(monthlyTargets?.liquido?.alvo ?? 0)}</span></div>
-        <div className="mt-3"><Bar pct={Number(monthlyTargets?.liquido?.alvo ?? 0) > 0 ? fatMes.liquido / Number(monthlyTargets?.liquido?.alvo) * 100 : 0} /></div>
-        <p className="text-xs mt-3" style={{ color: "var(--text3)" }}>
+
+        <div className="mt-6 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+          <div>
+            <div className="text-xs font-medium mb-1" style={{ color: "var(--mh-sub)" }}>Caixa (líquido)</div>
+            <div className="text-2xl font-bold tracking-tight">{eur(fatMes.liquido)}</div>
+          </div>
+          <div className="text-sm font-medium pb-0.5" style={{ color: "var(--mh-sub)" }}>
+            meta {eur(monthlyTargets?.liquido?.alvo ?? 0)}
+          </div>
+        </div>
+        <div className="mt-3">
+          <Bar
+            pct={Number(monthlyTargets?.liquido?.alvo ?? 0) > 0 ? fatMes.liquido / Number(monthlyTargets?.liquido?.alvo) * 100 : 0}
+            track="var(--mh-track)"
+          />
+        </div>
+
+        <p className="text-sm mt-5" style={{ color: "var(--mh-sub)" }}>
           Meta coletiva. Não paga bónus individual. Quando bater, o jantar da equipa é por conta da empresa.
         </p>
       </section>
