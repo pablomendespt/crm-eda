@@ -29,6 +29,7 @@ import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedMetasRouteImport } from './routes/_authenticated/metas'
 import { Route as AuthenticatedNoshowsRouteImport } from './routes/_authenticated/noshows'
 import { Route as AuthenticatedPagamentosRouteImport } from './routes/_authenticated/pagamentos'
+import { Route as AuthenticatedParcelasRouteImport } from './routes/_authenticated/parcelas'
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
 import { Route as AuthenticatedPipelineRouteImport } from './routes/_authenticated/pipeline'
 import { Route as AuthenticatedRecordesRouteImport } from './routes/_authenticated/recordes'
@@ -146,6 +147,11 @@ const AuthenticatedPagamentosRoute = AuthenticatedPagamentosRouteImport.update({
   path: '/pagamentos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedParcelasRoute = AuthenticatedParcelasRouteImport.update({
+  id: '/parcelas',
+  path: '/parcelas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPerfilRoute = AuthenticatedPerfilRouteImport.update({
   id: '/perfil',
   path: '/perfil',
@@ -243,6 +249,7 @@ export interface FileRoutesByFullPath {
   '/metas': typeof AuthenticatedMetasRoute
   '/noshows': typeof AuthenticatedNoshowsRoute
   '/pagamentos': typeof AuthenticatedPagamentosRoute
+  '/parcelas': typeof AuthenticatedParcelasRoute
   '/perfil': typeof AuthenticatedPerfilRoute
   '/pipeline': typeof AuthenticatedPipelineRoute
   '/recordes': typeof AuthenticatedRecordesRoute
@@ -278,6 +285,7 @@ export interface FileRoutesByTo {
   '/metas': typeof AuthenticatedMetasRoute
   '/noshows': typeof AuthenticatedNoshowsRoute
   '/pagamentos': typeof AuthenticatedPagamentosRoute
+  '/parcelas': typeof AuthenticatedParcelasRoute
   '/perfil': typeof AuthenticatedPerfilRoute
   '/pipeline': typeof AuthenticatedPipelineRoute
   '/recordes': typeof AuthenticatedRecordesRoute
@@ -315,6 +323,7 @@ export interface FileRoutesById {
   '/_authenticated/metas': typeof AuthenticatedMetasRoute
   '/_authenticated/noshows': typeof AuthenticatedNoshowsRoute
   '/_authenticated/pagamentos': typeof AuthenticatedPagamentosRoute
+  '/_authenticated/parcelas': typeof AuthenticatedParcelasRoute
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
   '/_authenticated/pipeline': typeof AuthenticatedPipelineRoute
   '/_authenticated/recordes': typeof AuthenticatedRecordesRoute
@@ -352,6 +361,7 @@ export interface FileRouteTypes {
     | '/metas'
     | '/noshows'
     | '/pagamentos'
+    | '/parcelas'
     | '/perfil'
     | '/pipeline'
     | '/recordes'
@@ -387,6 +397,7 @@ export interface FileRouteTypes {
     | '/metas'
     | '/noshows'
     | '/pagamentos'
+    | '/parcelas'
     | '/perfil'
     | '/pipeline'
     | '/recordes'
@@ -423,6 +434,7 @@ export interface FileRouteTypes {
     | '/_authenticated/metas'
     | '/_authenticated/noshows'
     | '/_authenticated/pagamentos'
+    | '/_authenticated/parcelas'
     | '/_authenticated/perfil'
     | '/_authenticated/pipeline'
     | '/_authenticated/recordes'
@@ -591,6 +603,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPagamentosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/parcelas': {
+      id: '/_authenticated/parcelas'
+      path: '/parcelas'
+      fullPath: '/parcelas'
+      preLoaderRoute: typeof AuthenticatedParcelasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/perfil': {
       id: '/_authenticated/perfil'
       path: '/perfil'
@@ -706,6 +725,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMetasRoute: typeof AuthenticatedMetasRoute
   AuthenticatedNoshowsRoute: typeof AuthenticatedNoshowsRoute
   AuthenticatedPagamentosRoute: typeof AuthenticatedPagamentosRoute
+  AuthenticatedParcelasRoute: typeof AuthenticatedParcelasRoute
   AuthenticatedPerfilRoute: typeof AuthenticatedPerfilRoute
   AuthenticatedPipelineRoute: typeof AuthenticatedPipelineRoute
   AuthenticatedRecordesRoute: typeof AuthenticatedRecordesRoute
@@ -736,6 +756,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMetasRoute: AuthenticatedMetasRoute,
   AuthenticatedNoshowsRoute: AuthenticatedNoshowsRoute,
   AuthenticatedPagamentosRoute: AuthenticatedPagamentosRoute,
+  AuthenticatedParcelasRoute: AuthenticatedParcelasRoute,
   AuthenticatedPerfilRoute: AuthenticatedPerfilRoute,
   AuthenticatedPipelineRoute: AuthenticatedPipelineRoute,
   AuthenticatedRecordesRoute: AuthenticatedRecordesRoute,

@@ -2,7 +2,7 @@ import { LayoutDashboard, Contact2, CalendarCheck, PlusCircle, Wallet, Users, He
 import type { AppRole } from "@/hooks/useAuth";
 
 export type NavAccess = { role: AppRole; isGerencia: boolean };
-export type NavItem = { to: string; label: string; roles: readonly AppRole[] };
+export type NavItem = { to: string; label: string; roles: readonly AppRole[]; managementOnly?: boolean };
 export type NavGroup = { id: string; label: string; icon: LucideIcon; items: readonly NavItem[]; managementOnly?: boolean; noSubNav?: boolean };
 const all: readonly AppRole[] = ["socio", "closer", "sdr", "cs"];
 const sales: readonly AppRole[] = ["socio", "closer", "cs"];
@@ -26,6 +26,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     { to: "/vendas", label: "Registar venda", roles: sales },
     { to: "/registro-vendas", label: "Registo de vendas", roles: all },
     { to: "/sinais", label: "Sinais", roles: sales },
+    { to: "/parcelas", label: "Parcelas", roles: ["socio", "closer", "cs"], managementOnly: true },
   ] },
   { id: "leads", label: "Leads", icon: Contact2, items: [
     { to: "/leads", label: "Central de Leads", roles: operations },
@@ -58,7 +59,7 @@ export function routeMatches(pathname: string, to: string) {
 
 export function visibleGroups(access: NavAccess) {
   return NAV_GROUPS.filter(group => !group.managementOnly || access.isGerencia)
-    .map(group => ({ ...group, items: group.items.filter(item => item.roles.includes(access.role)) }))
+    .map(group => ({ ...group, items: group.items.filter(item => item.roles.includes(access.role) && (!item.managementOnly || access.isGerencia)) }))
     .filter(group => group.items.length > 0);
 }
 
