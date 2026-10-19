@@ -26,7 +26,7 @@ async function call<T = any>(fn: string, args?: Record<string, unknown>): Promis
 
 const TABS_GER = [
   ["resumo", "Resumo"], ["parcelas", "Parcelas"], ["fixos", "Fixos e comissões"],
-  ["total", "Total do mês"], ["ajustes", "Ajustes"], ["historico", "Histórico"],
+  ["total", "Total do mês"], ["historico", "Histórico"],
 ] as const;
 const TABS_MEMBRO = [["fixos", "Fixos e comissões"]] as const;
 
@@ -68,7 +68,6 @@ function Page() {
       {cur === "parcelas" && <Parcelas {...p} />}
       {cur === "fixos" && <Fixos {...p} ger={ger} />}
       {cur === "total" && <Total {...p} />}
-      {cur === "ajustes" && <Ajustes />}
       {cur === "historico" && <Historico />}
     </div>
   );
@@ -215,7 +214,7 @@ function Parcelas({ from, to }: { from: string; to: string }) {
           <label className="flex items-center gap-1.5"><input type="checkbox" checked={doMes} onChange={(e) => setDoMes(e.target.checked)} /> Só quem vence no mês escolhido</label>
         </div>
       </div>
-      <p className="text-[11px]" style={{ color: "var(--text3)" }}>Uma linha por aluno. Clique na parcela para marcar como paga: a comissão dessa parcela é gerada para o SDR e o closer da venda. Os vencimentos seguem a data de início, mês a mês.</p>
+      <p className="text-[11px]" style={{ color: "var(--text3)" }}>Uma linha por aluno. Clique na parcela para marcar como paga: a comissão dessa parcela é gerada para o SDR e o closer da venda. Os vencimentos seguem a data de início, mês a mês. Duplo clique em "pagas" para mudar o número de parcelas (o que falta pagar é redistribuído).</p>
       <Tabela head={["Aluno", "Produto", "Início", "Parcelas", "Valor parcela", "Total da venda", ...cols.map((n) => `Parcela ${n}`), ""]} min={900 + maxN * 110}>
         {grupos.map((l) => {
           const v = l[0].venda; const n = l[0].total_parcelas ?? l.length;
@@ -226,7 +225,10 @@ function Parcelas({ from, to }: { from: string; to: string }) {
               <td className={TD + " font-semibold"} style={tdStyle}>{v?.nome_cliente ?? l[0].nome}{canc && <span className="ml-2"><Tag k="cancelada" /></span>}</td>
               <td className={TD} style={{ ...tdStyle, color: "var(--text2)" }}>{v?.produto ?? "—"}</td>
               <td className={TD} style={tdStyle}>{fmtDate(l[0].data)}</td>
-              <td className={TD} style={tdStyle}>{pagas}/{n} pagas</td>
+              <td className={TD} style={tdStyle}>
+                <Editavel can={!canc} value={String(n)} display={`${pagas}/${n} pagas`}
+                  onSave={async (x) => { await call("fin_alterar_parcelas", { p_venda: l[0].venda_id, p_n: Math.round(Number(x)) }); inv(); }} />
+              </td>
               <td className={TD} style={tdStyle}>{eur(l[0].valor)}</td>
               <td className={TD} style={tdStyle}>
                 <Editavel can value={String(v?.ticket ?? "")} display={eur(v?.ticket)}
@@ -486,56 +488,6 @@ function BonusModal({ r, mes, onClose }: { r: any; mes: string; onClose: () => v
   );
 }
 
-/* ---------- Ajustes ---------- */
-const DECIDIDO = ["aplicar", "parcial", "nao_aplicar"];
-function Ajustes() {
-  const inv = useInvalidate();
-  const q = useQuery({
-    queryKey: ["pag", "ajustes"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("fin_ajustes").select("*, member:members(nome), venda:vendas(nome_cliente)").neq("tipo", "bonus").order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as any[];
-    },
-  });
-  const decidir = async (id: string, d: string, sug: number) => {
-    let valor: number | null = null;
-    if (d === "parcial") {
-      const s = window.prompt(`Valor do ajuste (sugerido ${eur(sug)})`);
-      if (!s) return; valor = Number(s.replace(",", "."));
-    }
-    try { await call("fin_decidir_ajuste", { p_id: id, p_decisao: d, p_valor: valor }); toast.success("Decisão registada"); inv(); }
-    catch (e) { toast.error(friendlyError(e as any)); }
-  };
-  if (q.isLoading) return <Msg>A carregar…</Msg>;
-  return (
-    <Tabela head={["Data", "Tipo", "Aluno", "Pessoa", "Devolvido", "Comissão paga", "Sugerido", "Decisão", ""]} min={1000}>
-      {(q.data ?? []).map((a) => (
-        <tr key={a.id}>
-          <td className={TD} style={tdStyle}>{fmtDate(a.data)}</td>
-          <td className={TD} style={tdStyle}>{a.tipo}</td>
-          <td className={TD} style={tdStyle}>{a.venda?.nome_cliente ?? "—"}</td>
-          <td className={TD} style={tdStyle}>{a.member?.nome ?? "—"}</td>
-          <td className={TD} style={tdStyle}>{eur(a.valor_devolvido)}</td>
-          <td className={TD} style={tdStyle}>{eur(a.comissao_paga)}</td>
-          <td className={TD} style={tdStyle}>{eur(a.ajuste_sugerido)}</td>
-          <td className={TD} style={tdStyle}>{DECIDIDO.includes(a.decisao) ? `${a.decisao} (${eur(a.valor_ajuste)})` : "Pendente"}</td>
-          <td className={TD} style={tdStyle}>
-            {!DECIDIDO.includes(a.decisao) && (
-              <div className="flex gap-1">
-                <button className="eda-btn text-xs" onClick={() => decidir(a.id, "aplicar", a.ajuste_sugerido)}>Aplicar</button>
-                <button className="eda-btn-ghost text-xs" onClick={() => decidir(a.id, "parcial", a.ajuste_sugerido)}>Parcial</button>
-                <button className="eda-btn-ghost text-xs" onClick={() => decidir(a.id, "nao_aplicar", a.ajuste_sugerido)}>Não aplicar</button>
-              </div>
-            )}
-          </td>
-        </tr>
-      ))}
-      {(q.data ?? []).length === 0 && <tr><td colSpan={9} className="px-4 py-6 text-center" style={{ color: "var(--text3)" }}>Sem reembolsos nem chargebacks.</td></tr>}
-    </Tabela>
-  );
-}
-
 /* ---------- Histórico ---------- */
 function Historico() {
   const q = useQuery({
@@ -549,6 +501,7 @@ function Historico() {
   if (q.isLoading) return <Msg>A carregar…</Msg>;
   return (
     <Tabela head={["Quando", "Ação", "De", "Para", "Valor", "Quem"]} min={800}>
+      {(q.data ?? []).length === 0 && <tr><td colSpan={6} className="px-4 py-6 text-center" style={{ color: "var(--text3)" }}>Ainda sem movimentos. Cada pagamento, mudança de vencimento, de valor ou de parcelas fica registado aqui, com quem fez.</td></tr>}
       {(q.data ?? []).map((h: any) => (
         <tr key={h.id}>
           <td className={TD} style={tdStyle}>{new Date(h.created_at).toLocaleString("pt-PT")}</td>
