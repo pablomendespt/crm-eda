@@ -252,9 +252,10 @@ html.light .eda-kpi { background: var(--surface3); }
 .record-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(3,5,11,.95) 0%, rgba(3,5,11,.8) 35%, transparent 72%); }
 .record-pill { position: absolute; top: 18px; right: 18px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(252,211,77,.3); border-radius: 999px; padding: 7px 10px; color: var(--gold); background: rgba(252,211,77,.12); font-size: 11px; font-weight: 700; }
 .record-content { position: absolute; inset: auto 0 0; z-index: 1; padding: 24px; }
-.record-content h2 { margin-top: 4px; color: var(--text2); font-size: 15px; font-weight: 500; letter-spacing: 0; }
-.record-content p { margin-top: 8px; color: var(--text2); font-size: 12px; }
-.record-content strong { color: var(--text); font-weight: 600; }
+/* Os cartões de recorde são sempre escuros (foto), por isso o texto é claro nos dois temas. */
+.record-content h2 { margin-top: 4px; color: rgba(238,242,255,.82); font-size: 15px; font-weight: 500; letter-spacing: 0; }
+.record-content p { margin-top: 8px; color: rgba(238,242,255,.72); font-size: 12px; }
+.record-content strong { color: #ffffff; font-weight: 600; }
 .record-value { color: #eef2ff; font-size: 44px; font-weight: 800; line-height: .98; letter-spacing: -0.02em; text-shadow: 0 4px 18px rgba(0,0,0,.55); overflow-wrap: anywhere; }
 
 @media (min-width: 640px) { .profile-panel { flex-direction: row; } .record-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
@@ -280,3 +281,22 @@ html.light .eda-kpi { background: var(--surface3); }
 .subnav-link[data-active="true"] { color: var(--foreground); border-bottom-color: var(--accent); background: var(--surface2); }
 .subnav-link:hover { color: var(--foreground); background: var(--surface2); }
 @media (prefers-reduced-motion: reduce) { .nav-group-link, .subnav-link { transition: none; } }
+
+/* Ranking do mês (Equipa > Recordes) — usa os tokens do tema, funciona no claro e no escuro */
+.rank-card { padding: 22px; }
+.rank-row { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 16px; background: var(--surface2); border: 1px solid var(--border); }
+.rank-row-1 { padding: 18px 18px; background: linear-gradient(135deg, rgba(245,197,66,.22), rgba(245,197,66,.06)); border-color: rgba(214,163,28,.55); }
+.rank-row-vazio { opacity: .75; border-style: dashed; background: transparent; }
+.rank-medal { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 999px; font-size: 13px; font-weight: 800; }
+.rank-row-1 .rank-medal { width: 42px; height: 42px; font-size: 15px; }
+.rank-medal-1 { background: #f5c542; color: #3a2a00; }
+.rank-medal-2 { background: #cbd5e1; color: #1e293b; }
+.rank-medal-3 { background: #d38b5d; color: #3b1d0a; }
+.rank-avatar { flex: none; width: 46px; height: 46px; border-radius: 999px; object-fit: cover; }
+.rank-row-1 .rank-avatar { width: 54px; height: 54px; }
+.rank-avatar-ini { display: grid; place-items: center; color: #eef2ff; font-size: 15px; font-weight: 700; background: linear-gradient(135deg,#1e3a8a,#2563eb 60%,#38bdf8); }
+.rank-valor { flex: none; text-align: right; font-size: 18px; font-weight: 800; letter-spacing: -0.01em; color: var(--text); }
+.rank-row-1 .rank-valor { font-size: 22px; }
+.rank-nav { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); cursor: pointer; }
+.rank-nav:hover:not(:disabled) { border-color: var(--accent); }
+.rank-nav:disabled { opacity: .35; cursor: default; }
