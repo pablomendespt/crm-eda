@@ -31,7 +31,7 @@ function AuthPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/dashboard" });
+      if (data.session) navigate({ to: "/funil" });
     });
   }, [navigate]);
 
@@ -87,7 +87,7 @@ function AuthPage() {
         localStorage.setItem("eda:remember", "false");
       }
       localStorage.removeItem("eda:lastPassword");
-      navigate({ to: "/dashboard" });
+      navigate({ to: "/funil" });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Erro";
       toast.error(msg);

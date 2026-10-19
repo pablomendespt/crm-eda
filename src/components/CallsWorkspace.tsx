@@ -26,7 +26,7 @@ export function CallsWorkspace({ validate=false }: { validate?: boolean }) {
  const names = new Map(members.map(m=>[m.id,m.nome]));
  const management=!!profile?.isGerencia;
  const myId=profile?.profile?.member_id;
- if (profile && !management && (validate ? profile.role!=='closer' : profile.role!=='sdr')) return <Navigate to={profile.role==='closer' ? '/validar-calls' : '/dashboard'} replace />;
+ if (profile && !management && (validate ? profile.role!=='closer' : profile.role!=='sdr')) return <Navigate to={profile.role==='closer' ? '/validar-calls' : '/funil'} replace />;
  async function act(c:CallRow, estado:string, data?:string) {
   setBusy(true);
   try {

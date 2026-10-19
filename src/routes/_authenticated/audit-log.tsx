@@ -26,7 +26,7 @@ const ACTIONS = ["all", "INSERT", "UPDATE", "DELETE"] as const;
 
 function AuditLogPage() {
   const { data: profile } = useProfile();
-  if (profile && profile.role !== "socio") return <Navigate to="/dashboard" replace />;
+  if (profile && profile.role !== "socio") return <Navigate to="/funil" replace />;
 
   const [table, setTable] = useState<(typeof TABLES)[number]>("all");
   const [action, setAction] = useState<(typeof ACTIONS)[number]>("all");

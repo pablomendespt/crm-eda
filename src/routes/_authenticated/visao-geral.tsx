@@ -172,7 +172,7 @@ function VisaoGeral() {
 
 
   if (role && role !== "socio") {
-    return <Navigate to="/dashboard" />;
+    return <Navigate to="/funil" />;
   }
 
   const taxaNaoCompareceu = pct1(closerTotals.calls_noshow, closerTotals.calls_realizadas + closerTotals.calls_noshow);

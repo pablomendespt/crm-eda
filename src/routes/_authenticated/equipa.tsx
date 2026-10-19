@@ -30,7 +30,7 @@ function Equipa() {
   useEffect(() => {
     if (!isLoading && prof && prof.role !== "socio") {
       toast.error("Acesso restrito a sócios.");
-      navigate({ to: "/dashboard", replace: true });
+      navigate({ to: "/funil", replace: true });
     }
   }, [isLoading, prof, navigate]);
 

@@ -16,6 +16,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as FinanceiroRouteImport } from './routes/financeiro'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SalariosComissoesRouteImport } from './routes/salarios-comissoes'
+import { Route as AuthenticatedAgendaRouteImport } from './routes/_authenticated/agenda'
 import { Route as AuthenticatedAnaliseTimeRouteImport } from './routes/_authenticated/analise-time'
 import { Route as AuthenticatedAnualRouteImport } from './routes/_authenticated/anual'
 import { Route as AuthenticatedAuditLogRouteImport } from './routes/_authenticated/audit-log'
@@ -25,9 +26,11 @@ import { Route as AuthenticatedCustomerSuccessRouteImport } from './routes/_auth
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedEquipaRouteImport } from './routes/_authenticated/equipa'
 import { Route as AuthenticatedFollowupsRouteImport } from './routes/_authenticated/followups'
+import { Route as AuthenticatedFunilRouteImport } from './routes/_authenticated/funil'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedMetasRouteImport } from './routes/_authenticated/metas'
 import { Route as AuthenticatedNoshowsRouteImport } from './routes/_authenticated/noshows'
+import { Route as AuthenticatedNumerosRouteImport } from './routes/_authenticated/numeros'
 import { Route as AuthenticatedPagamentosRouteImport } from './routes/_authenticated/pagamentos'
 import { Route as AuthenticatedParcelasRouteImport } from './routes/_authenticated/parcelas'
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
@@ -79,6 +82,11 @@ const SalariosComissoesRoute = SalariosComissoesRouteImport.update({
   path: '/salarios-comissoes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAgendaRoute = AuthenticatedAgendaRouteImport.update({
+  id: '/agenda',
+  path: '/agenda',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAnaliseTimeRoute =
   AuthenticatedAnaliseTimeRouteImport.update({
     id: '/analise-time',
@@ -127,6 +135,11 @@ const AuthenticatedFollowupsRoute = AuthenticatedFollowupsRouteImport.update({
   path: '/followups',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedFunilRoute = AuthenticatedFunilRouteImport.update({
+  id: '/funil',
+  path: '/funil',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedLeadsRoute = AuthenticatedLeadsRouteImport.update({
   id: '/leads',
   path: '/leads',
@@ -140,6 +153,11 @@ const AuthenticatedMetasRoute = AuthenticatedMetasRouteImport.update({
 const AuthenticatedNoshowsRoute = AuthenticatedNoshowsRouteImport.update({
   id: '/noshows',
   path: '/noshows',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedNumerosRoute = AuthenticatedNumerosRouteImport.update({
+  id: '/numeros',
+  path: '/numeros',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedPagamentosRoute = AuthenticatedPagamentosRouteImport.update({
@@ -236,6 +254,7 @@ export interface FileRoutesByFullPath {
   '/financeiro': typeof FinanceiroRoute
   '/reset-password': typeof ResetPasswordRoute
   '/salarios-comissoes': typeof SalariosComissoesRoute
+  '/agenda': typeof AuthenticatedAgendaRoute
   '/analise-time': typeof AuthenticatedAnaliseTimeRoute
   '/anual': typeof AuthenticatedAnualRoute
   '/audit-log': typeof AuthenticatedAuditLogRoute
@@ -245,9 +264,11 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/equipa': typeof AuthenticatedEquipaRoute
   '/followups': typeof AuthenticatedFollowupsRoute
+  '/funil': typeof AuthenticatedFunilRoute
   '/leads': typeof AuthenticatedLeadsRoute
   '/metas': typeof AuthenticatedMetasRoute
   '/noshows': typeof AuthenticatedNoshowsRoute
+  '/numeros': typeof AuthenticatedNumerosRoute
   '/pagamentos': typeof AuthenticatedPagamentosRoute
   '/parcelas': typeof AuthenticatedParcelasRoute
   '/perfil': typeof AuthenticatedPerfilRoute
@@ -272,6 +293,7 @@ export interface FileRoutesByTo {
   '/financeiro': typeof FinanceiroRoute
   '/reset-password': typeof ResetPasswordRoute
   '/salarios-comissoes': typeof SalariosComissoesRoute
+  '/agenda': typeof AuthenticatedAgendaRoute
   '/analise-time': typeof AuthenticatedAnaliseTimeRoute
   '/anual': typeof AuthenticatedAnualRoute
   '/audit-log': typeof AuthenticatedAuditLogRoute
@@ -281,9 +303,11 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/equipa': typeof AuthenticatedEquipaRoute
   '/followups': typeof AuthenticatedFollowupsRoute
+  '/funil': typeof AuthenticatedFunilRoute
   '/leads': typeof AuthenticatedLeadsRoute
   '/metas': typeof AuthenticatedMetasRoute
   '/noshows': typeof AuthenticatedNoshowsRoute
+  '/numeros': typeof AuthenticatedNumerosRoute
   '/pagamentos': typeof AuthenticatedPagamentosRoute
   '/parcelas': typeof AuthenticatedParcelasRoute
   '/perfil': typeof AuthenticatedPerfilRoute
@@ -310,6 +334,7 @@ export interface FileRoutesById {
   '/financeiro': typeof FinanceiroRoute
   '/reset-password': typeof ResetPasswordRoute
   '/salarios-comissoes': typeof SalariosComissoesRoute
+  '/_authenticated/agenda': typeof AuthenticatedAgendaRoute
   '/_authenticated/analise-time': typeof AuthenticatedAnaliseTimeRoute
   '/_authenticated/anual': typeof AuthenticatedAnualRoute
   '/_authenticated/audit-log': typeof AuthenticatedAuditLogRoute
@@ -319,9 +344,11 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/equipa': typeof AuthenticatedEquipaRoute
   '/_authenticated/followups': typeof AuthenticatedFollowupsRoute
+  '/_authenticated/funil': typeof AuthenticatedFunilRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/metas': typeof AuthenticatedMetasRoute
   '/_authenticated/noshows': typeof AuthenticatedNoshowsRoute
+  '/_authenticated/numeros': typeof AuthenticatedNumerosRoute
   '/_authenticated/pagamentos': typeof AuthenticatedPagamentosRoute
   '/_authenticated/parcelas': typeof AuthenticatedParcelasRoute
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
@@ -348,6 +375,7 @@ export interface FileRouteTypes {
     | '/financeiro'
     | '/reset-password'
     | '/salarios-comissoes'
+    | '/agenda'
     | '/analise-time'
     | '/anual'
     | '/audit-log'
@@ -357,9 +385,11 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/equipa'
     | '/followups'
+    | '/funil'
     | '/leads'
     | '/metas'
     | '/noshows'
+    | '/numeros'
     | '/pagamentos'
     | '/parcelas'
     | '/perfil'
@@ -384,6 +414,7 @@ export interface FileRouteTypes {
     | '/financeiro'
     | '/reset-password'
     | '/salarios-comissoes'
+    | '/agenda'
     | '/analise-time'
     | '/anual'
     | '/audit-log'
@@ -393,9 +424,11 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/equipa'
     | '/followups'
+    | '/funil'
     | '/leads'
     | '/metas'
     | '/noshows'
+    | '/numeros'
     | '/pagamentos'
     | '/parcelas'
     | '/perfil'
@@ -421,6 +454,7 @@ export interface FileRouteTypes {
     | '/financeiro'
     | '/reset-password'
     | '/salarios-comissoes'
+    | '/_authenticated/agenda'
     | '/_authenticated/analise-time'
     | '/_authenticated/anual'
     | '/_authenticated/audit-log'
@@ -430,9 +464,11 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/equipa'
     | '/_authenticated/followups'
+    | '/_authenticated/funil'
     | '/_authenticated/leads'
     | '/_authenticated/metas'
     | '/_authenticated/noshows'
+    | '/_authenticated/numeros'
     | '/_authenticated/pagamentos'
     | '/_authenticated/parcelas'
     | '/_authenticated/perfil'
@@ -512,6 +548,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SalariosComissoesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/agenda': {
+      id: '/_authenticated/agenda'
+      path: '/agenda'
+      fullPath: '/agenda'
+      preLoaderRoute: typeof AuthenticatedAgendaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/analise-time': {
       id: '/_authenticated/analise-time'
       path: '/analise-time'
@@ -575,6 +618,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFollowupsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/funil': {
+      id: '/_authenticated/funil'
+      path: '/funil'
+      fullPath: '/funil'
+      preLoaderRoute: typeof AuthenticatedFunilRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/leads': {
       id: '/_authenticated/leads'
       path: '/leads'
@@ -594,6 +644,13 @@ declare module '@tanstack/react-router' {
       path: '/noshows'
       fullPath: '/noshows'
       preLoaderRoute: typeof AuthenticatedNoshowsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/numeros': {
+      id: '/_authenticated/numeros'
+      path: '/numeros'
+      fullPath: '/numeros'
+      preLoaderRoute: typeof AuthenticatedNumerosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/pagamentos': {
@@ -712,6 +769,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAgendaRoute: typeof AuthenticatedAgendaRoute
   AuthenticatedAnaliseTimeRoute: typeof AuthenticatedAnaliseTimeRoute
   AuthenticatedAnualRoute: typeof AuthenticatedAnualRoute
   AuthenticatedAuditLogRoute: typeof AuthenticatedAuditLogRoute
@@ -721,9 +779,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEquipaRoute: typeof AuthenticatedEquipaRoute
   AuthenticatedFollowupsRoute: typeof AuthenticatedFollowupsRoute
+  AuthenticatedFunilRoute: typeof AuthenticatedFunilRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedMetasRoute: typeof AuthenticatedMetasRoute
   AuthenticatedNoshowsRoute: typeof AuthenticatedNoshowsRoute
+  AuthenticatedNumerosRoute: typeof AuthenticatedNumerosRoute
   AuthenticatedPagamentosRoute: typeof AuthenticatedPagamentosRoute
   AuthenticatedParcelasRoute: typeof AuthenticatedParcelasRoute
   AuthenticatedPerfilRoute: typeof AuthenticatedPerfilRoute
@@ -743,6 +803,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAgendaRoute: AuthenticatedAgendaRoute,
   AuthenticatedAnaliseTimeRoute: AuthenticatedAnaliseTimeRoute,
   AuthenticatedAnualRoute: AuthenticatedAnualRoute,
   AuthenticatedAuditLogRoute: AuthenticatedAuditLogRoute,
@@ -752,9 +813,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEquipaRoute: AuthenticatedEquipaRoute,
   AuthenticatedFollowupsRoute: AuthenticatedFollowupsRoute,
+  AuthenticatedFunilRoute: AuthenticatedFunilRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedMetasRoute: AuthenticatedMetasRoute,
   AuthenticatedNoshowsRoute: AuthenticatedNoshowsRoute,
+  AuthenticatedNumerosRoute: AuthenticatedNumerosRoute,
   AuthenticatedPagamentosRoute: AuthenticatedPagamentosRoute,
   AuthenticatedParcelasRoute: AuthenticatedParcelasRoute,
   AuthenticatedPerfilRoute: AuthenticatedPerfilRoute,

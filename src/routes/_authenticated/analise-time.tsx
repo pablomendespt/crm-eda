@@ -66,7 +66,7 @@ function Page() {
   const { data: financeiro } = useFinanceMembers(pIni, pFim);
   const { data: financeiroSdr } = useFinanceMembers(pIni, pFim, "sdr");
 
-  if (profile && profile.role !== "socio") return <Navigate to="/dashboard" replace />;
+  if (profile && profile.role !== "socio") return <Navigate to="/funil" replace />;
 
   const sdrs = (members ?? []).filter((m) => m.role === "sdr");
   const closers = (members ?? []).filter((m) => m.role === "closer");

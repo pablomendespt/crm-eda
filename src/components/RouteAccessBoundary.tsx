@@ -15,6 +15,6 @@ export function RouteAccessBoundary({ children }: { children: ReactNode }) {
   return <main className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background text-foreground px-6">
     <h1 className="text-2xl font-bold">Sem acesso</h1>
     <p className="text-muted-foreground text-center">Não tem permissão para abrir esta área.</p>
-    <Button asChild><Link to="/dashboard">Voltar ao Dashboard</Link></Button>
+    <Button asChild><Link to="/funil">Voltar ao Funil</Link></Button>
   </main>;
 }

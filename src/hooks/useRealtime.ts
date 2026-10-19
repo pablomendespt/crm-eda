@@ -6,19 +6,11 @@ import { supabase } from "@/integrations/supabase/client";
 // todos os acessos abertos (SDR, Closer, Fundadores) sem precisar refresh.
 const TABLES = [
   "vendas",
-  "leads",
-  "noshows",
   "cobrancas",
-  "daily_stats",
   "members",
   "sdr_daily",
   "closer_daily",
-  "follow_ups",
-  "calls",
   "metas_config",
-  "recovery_leads",
-  "recovery_interactions",
-  "leads_consolidados",
 ];
 
 export function useRealtimeSync() {

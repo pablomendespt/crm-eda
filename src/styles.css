@@ -300,3 +300,15 @@ html.light .eda-kpi { background: var(--surface3); }
 .rank-nav { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); cursor: pointer; }
 .rank-nav:hover:not(:disabled) { border-color: var(--accent); }
 .rank-nav:disabled { opacity: .35; cursor: default; }
+
+/* Barra lateral estilo CRM profissional: secções, ícones lineares, item ativo sóbrio */
+.nav-section { margin-bottom: 18px; }
+.nav-section-label { padding: 0 10px 6px; color: #5b6a8c; font-size: 10.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
+.nav-item { position: relative; display: flex; align-items: center; gap: 11px; height: 36px; padding: 0 10px; border-radius: 8px; color: #9aa7c4; font-size: 13.5px; font-weight: 500; transition: background 120ms, color 120ms; }
+.nav-item:hover { background: rgba(255,255,255,.06); color: #e6ebf7; }
+.nav-item[data-active="true"] { background: rgba(59,130,246,.16); color: #ffffff; }
+.nav-item[data-active="true"]::before { content: ""; position: absolute; left: -12px; top: 7px; bottom: 7px; width: 3px; border-radius: 0 3px 3px 0; background: var(--accent-bright); }
+.nav-item:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.nav-icon-btn { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; color: #8d9ab8; transition: background 120ms, color 120ms; }
+.nav-icon-btn:hover { background: rgba(255,255,255,.08); color: #fff; }
+@media (prefers-reduced-motion: reduce) { .nav-item, .nav-icon-btn { transition: none; } }
