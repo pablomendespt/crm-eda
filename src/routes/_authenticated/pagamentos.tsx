@@ -86,13 +86,13 @@ function Kpi({ label, value, hint, tone }: { label: string; value: string; hint?
     </div>
   );
 }
-function Tabela({ head, children, min = 700 }: { head: string[]; children: ReactNode; min?: number }) {
+function Tabela({ head, children, min = 700, stickyFirst }: { head: string[]; children: ReactNode; min?: number; stickyFirst?: boolean }) {
   return (
     <div className="eda-card p-0 overflow-x-auto">
       <table className="w-full text-sm" style={{ minWidth: min }}>
         <thead>
           <tr className="text-left text-[11px] uppercase" style={{ color: "var(--text2)", background: "var(--surface2)" }}>
-            {head.map((h) => <th key={h} className="px-4 py-3 font-semibold tracking-[.08em] whitespace-nowrap">{h}</th>)}
+            {head.map((h, i) => <th key={h} className={"px-4 py-3 font-semibold tracking-[.08em] whitespace-nowrap" + (stickyFirst && i === 0 ? " sticky left-0 z-10" : "")} style={stickyFirst && i === 0 ? { background: "var(--surface2)" } : undefined}>{h}</th>)}
           </tr>
         </thead>
         <tbody>{children}</tbody>
@@ -168,6 +168,7 @@ function Parcelas({ from, to }: { from: string; to: string }) {
   const [soRecorrente, setSoRecorrente] = useState(true);
   const [doMes, setDoMes] = useState(false);
   const [sel, setSel] = useState<any | null>(null);
+  const [editar, setEditar] = useState<string | null>(null);
   const q = useQuery({
     queryKey: ["pag", "parcelas"],
     queryFn: async () => {
@@ -214,26 +215,26 @@ function Parcelas({ from, to }: { from: string; to: string }) {
           <label className="flex items-center gap-1.5"><input type="checkbox" checked={doMes} onChange={(e) => setDoMes(e.target.checked)} /> Só quem vence no mês escolhido</label>
         </div>
       </div>
-      <p className="text-[11px]" style={{ color: "var(--text3)" }}>Uma linha por aluno. Clique na parcela para marcar como paga: a comissão dessa parcela é gerada para o SDR e o closer da venda. Os vencimentos seguem a data de início, mês a mês. Duplo clique em "pagas" para mudar o número de parcelas (o que falta pagar é redistribuído).</p>
-      <Tabela head={["Aluno", "Produto", "Início", "Parcelas", "Valor parcela", "Total da venda", ...cols.map((n) => `Parcela ${n}`), ""]} min={900 + maxN * 110}>
+      <p className="text-[11px]" style={{ color: "var(--text3)" }}>Uma linha por aluno. Clique na parcela para marcar como paga: a comissão dessa parcela é gerada para o SDR e o closer da venda. Os vencimentos seguem a data de início, mês a mês. Use o botão Editar, na linha do aluno, para mudar o número de parcelas, os vencimentos e o total da venda.</p>
+      <Tabela head={["Aluno", "Parcelas", "Valor parcela", "Total da venda", ...cols.map((n) => `Parcela ${n}`)]} min={760 + maxN * 110} stickyFirst>
         {grupos.map((l) => {
           const v = l[0].venda; const n = l[0].total_parcelas ?? l.length;
           const pagas = l.filter((c) => c.estado_calc === "paga").length;
           const canc = v && ["cancelado", "cancelada"].includes(v.status);
           return (
             <tr key={l[0].venda_id}>
-              <td className={TD + " font-semibold"} style={tdStyle}>{v?.nome_cliente ?? l[0].nome}{canc && <span className="ml-2"><Tag k="cancelada" /></span>}</td>
-              <td className={TD} style={{ ...tdStyle, color: "var(--text2)" }}>{v?.produto ?? "—"}</td>
-              <td className={TD} style={tdStyle}>{fmtDate(l[0].data)}</td>
-              <td className={TD} style={tdStyle}>
-                <Editavel can={!canc} value={String(n)} display={`${pagas}/${n} pagas`}
-                  onSave={async (x) => { await call("fin_alterar_parcelas", { p_venda: l[0].venda_id, p_n: Math.round(Number(x)) }); inv(); }} />
+              <td className={TD + " font-semibold sticky left-0 z-10"} style={{ ...tdStyle, background: "var(--surface)" }}>
+                {v?.nome_cliente ?? l[0].nome}{canc && <span className="ml-2"><Tag k="cancelada" /></span>}
+                <div className="text-[11px] font-normal" style={{ color: "var(--text3)" }}>Início {fmtDate(l[0].data)}</div>
+                <div className="flex gap-1.5 mt-1.5">
+                  {!canc && <button className="eda-btn text-[11px] px-2.5 py-1" onClick={() => setEditar(l[0].venda_id)}>Editar</button>}
+                  {v && !canc && <button className="eda-btn-ghost text-[11px] px-2.5 py-1" style={{ color: "var(--red)" }} disabled={cancelar.isPending}
+                    onClick={() => { if (confirm(`Cancelar a venda de ${v.nome_cliente}? As parcelas pendentes ficam canceladas; as pagas não mudam.`)) cancelar.mutate(l[0].venda_id); }}>Cancelar</button>}
+                </div>
               </td>
+              <td className={TD} style={tdStyle}>{pagas}/{n} pagas</td>
               <td className={TD} style={tdStyle}>{eur(l[0].valor)}</td>
-              <td className={TD} style={tdStyle}>
-                <Editavel can value={String(v?.ticket ?? "")} display={eur(v?.ticket)}
-                  onSave={async (x) => { await call("fin_alterar_valor_venda", { p_venda: l[0].venda_id, p_novo: Number(x) }); inv(); }} />
-              </td>
+              <td className={TD} style={tdStyle}>{eur(v?.ticket)}</td>
               {cols.map((num) => {
                 const c = l.find((x) => x.parcela_num === num);
                 if (!c) return <td key={num} className={TD} style={{ ...tdStyle, color: "var(--text3)" }}>—</td>;
@@ -250,17 +251,75 @@ function Parcelas({ from, to }: { from: string; to: string }) {
                   </td>
                 );
               })}
-              <td className={TD} style={tdStyle}>
-                {v && !canc && <button className="eda-btn-ghost text-xs" style={{ color: "var(--red)" }} disabled={cancelar.isPending}
-                  onClick={() => { if (confirm(`Cancelar a venda de ${v.nome_cliente}? As parcelas pendentes ficam canceladas; as pagas não mudam.`)) cancelar.mutate(l[0].venda_id); }}>Cancelar venda</button>}
-              </td>
             </tr>
           );
         })}
-        {grupos.length === 0 && <tr><td colSpan={7 + maxN} className="px-4 py-6 text-center" style={{ color: "var(--text3)" }}>Nenhum aluno com este filtro.</td></tr>}
+        {grupos.length === 0 && <tr><td colSpan={4 + maxN} className="px-4 py-6 text-center" style={{ color: "var(--text3)" }}>Nenhum aluno com este filtro. Alunos já quitados estão em "Quitadas" ou "Todas".</td></tr>}
       </Tabela>
+      {editar && porVenda.get(editar) && <EditarVenda l={porVenda.get(editar)!} onClose={() => setEditar(null)} />}
       {sel && <PagarModal c={sel} onClose={() => setSel(null)} />}
     </div>
+  );
+}
+
+function EditarVenda({ l, onClose }: { l: any[]; onClose: () => void }) {
+  const inv = useInvalidate();
+  const v = l[0].venda; const vid = l[0].venda_id;
+  const ativas = l.filter((c) => c.estado_calc !== "cancelada");
+  const n = ativas[0]?.total_parcelas ?? ativas.length;
+  const [nParc, setNParc] = useState(String(n));
+  const [total, setTotal] = useState(String(v?.ticket ?? ""));
+  const [datas, setDatas] = useState<Record<string, string>>({});
+  const run = useMutation({
+    mutationFn: (f: () => Promise<unknown>) => f(),
+    onSuccess: () => { toast.success("Guardado"); inv(); },
+    onError: (e: any) => toast.error(friendlyError(e)),
+  });
+  return (
+    <Modal title={`Editar · ${v?.nome_cliente ?? l[0].nome}`} onClose={onClose}>
+      <div className="space-y-6">
+        <div>
+          <div className="text-xs font-semibold mb-2" style={{ color: "var(--text2)" }}>Número de parcelas</div>
+          <div className="flex gap-2 items-center">
+            <input type="number" min={1} max={24} className="eda-input w-24" value={nParc} onChange={(e) => setNParc(e.target.value)} />
+            <button className="eda-btn text-xs" disabled={run.isPending || Number(nParc) === n || !nParc}
+              onClick={() => run.mutate(() => call("fin_alterar_parcelas", { p_venda: vid, p_n: Math.round(Number(nParc)) }))}>Aplicar</button>
+          </div>
+          <p className="text-[11px] mt-1.5" style={{ color: "var(--text3)" }}>Parcelas pagas não mudam. O que falta pagar é redividido entre as parcelas em aberto.</p>
+        </div>
+        <div>
+          <div className="text-xs font-semibold mb-2" style={{ color: "var(--text2)" }}>Vencimento de cada parcela</div>
+          <div className="space-y-2">
+            {ativas.map((c) => {
+              const aberta = c.estado_calc === "pendente" || c.estado_calc === "atrasada";
+              const val = datas[c.id] ?? c.data;
+              return (
+                <div key={c.id} className="flex flex-wrap items-center gap-3 text-sm">
+                  <span className="w-24">Parcela {c.parcela_num}</span>
+                  <span className="w-24" style={{ color: "var(--text2)" }}>{eur(c.valor_recebido ?? c.valor)}</span>
+                  {aberta ? (
+                    <>
+                      <input type="date" className="eda-input" value={val} onChange={(e) => setDatas({ ...datas, [c.id]: e.target.value })} />
+                      <button className="eda-btn-ghost text-xs" disabled={run.isPending || !val || val === c.data}
+                        onClick={() => run.mutate(() => call("fin_alterar_vencimento", { p_cobranca: c.id, p_data: val }))}>Guardar</button>
+                    </>
+                  ) : <span style={{ color: "var(--green)" }}>Paga {c.pago_em ? fmtDate(c.pago_em) : ""}</span>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <div>
+          <div className="text-xs font-semibold mb-2" style={{ color: "var(--text2)" }}>Total da venda (EUR)</div>
+          <div className="flex gap-2 items-center">
+            <input type="number" step="0.01" className="eda-input w-32" value={total} onChange={(e) => setTotal(e.target.value)} />
+            <button className="eda-btn text-xs" disabled={run.isPending || !total || Number(total) === Number(v?.ticket)}
+              onClick={() => run.mutate(() => call("fin_alterar_valor_venda", { p_venda: vid, p_novo: Number(total) }))}>Guardar</button>
+          </div>
+          <p className="text-[11px] mt-1.5" style={{ color: "var(--text3)" }}>Ao mudar o total, o que falta pagar é redividido entre as parcelas em aberto.</p>
+        </div>
+      </div>
+    </Modal>
   );
 }
 
