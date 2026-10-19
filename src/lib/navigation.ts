@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, KanbanSquare, CalendarDays, BarChart3, Wallet, Users, GraduationCap, ShieldCheck, Receipt, Archive,
+  LayoutDashboard, KanbanSquare, CalendarDays, BarChart3, Wallet, Users, ShieldCheck, Receipt, Archive,
   type LucideIcon,
 } from "lucide-react";
 import type { AppRole } from "@/hooks/useAuth";
@@ -23,9 +23,6 @@ export const NAV_GROUPS: readonly NavGroup[] = [
   ] },
   { id: "numeros", label: "Números", icon: BarChart3, section: "Comercial", noSubNav: true, items: [
     { to: "/numeros", label: "Números", roles: comercial },
-  ] },
-  { id: "alunos", label: "Alunos", icon: GraduationCap, section: "Comercial", noSubNav: true, items: [
-    { to: "/customer-success", label: "Alunos", roles: all },
   ] },
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, section: "Gestão", items: [
     { to: "/dashboard", label: "Dashboard", roles: partners },
